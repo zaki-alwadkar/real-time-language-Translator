@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Language Translator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        async function translateText() {
+            activateSiriAnimation();
+            const inputText = document.getElementById('text-input').value;
+            const sourceLang = document.getElementById('source-lang').value;
+            const targetLang = document.getElementById('target-lang').value;
+
+            if (!inputText) {
+                alert("Please enter text to translate.");
+                return;
+            }
+
+            const response = await fetch('/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: inputText, source_language: sourceLang, target_language: targetLang })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('translated-text').innerText = 'Translated Text: ' + data.translated_text;
+            } else {
+                document.getElementById('translated-text').innerText = 'Error: ' + data.detail;
+            }
+        }
+
+        function startSpeechRecognition() {
+            activateSiriAnimation();
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.continuous = false;
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('text-input').value = transcript;
+            };
+
+            recognition.start();
+        }
+
+        async function uploadAudio() {
+            activateSiriAnimation();
+            const fileInput = document.getElementById('audio-input');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select an audio file.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("audio_file", file);
+
+            const response = await fetch('/speech-to-text', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                document.getElementById('text-input').value = data.text;
+            } else {
+                alert("Error: " + data.detail);
+            }
+        }
+
+        async function downloadAudio() {
+            activateSiriAnimation();
+            const text = document.getElementById('translated-text').innerText.replace('Translated Text: ', '');
+            if (!text) {
+                alert("Please translate text first before downloading.");
+                return;
+            }
+
+            const response = await fetch(`/text-to-speech?text=${encodeURIComponent(text)}`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'translated_audio.mp3';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                alert("Error downloading audio.");
+            }
+        }
+
+        function activateSiriAnimation() {
+            const siriCircle = document.querySelector('.loading-circle');
+            siriCircle.classList.add('active');
+            setTimeout(() => siriCircle.classList.remove('active'), 3000);
+        }
+    </script>
+    <style>
+        @keyframes siriPulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+        .loading-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #4a148c, #000);
+            box-shadow: 0 0 40px #9b2c2c;
+            position: relative;
+            margin-top: 20px;
+        }
+        .loading-circle.active {
+            animation: siriPulse 1.5s infinite;
+        }
+
+        /* Button Styling */
+        .button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background 0.3s ease-in-out;
+            text-align: center;
+        }
+        .btn-purple { background: #6a0dad; color: white; }
+        .btn-purple:hover { background: #5a0cb4; }
+        .btn-green { background: #28a745; color: white; }
+        .btn-green:hover { background: #218838; }
+        .btn-blue { background: #007bff; color: white; }
+        .btn-blue:hover { background: #0056b3; }
+        .btn-pink { background: #e83e8c; color: white; }
+        .btn-pink:hover { background: #c82366; }
+
+        /* Navigation Bar Styling */
+        .navbar {
+            width: 100%;
+            background: black;
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+        .nav-links a {
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            transition: color 0.3s ease-in-out;
+        }
+        .nav-links a:hover {
+            color: #6a0dad;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-black via-gray-900 to-black text-white min-h-screen flex flex-col items-center p-8">
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Features</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+        </div>
+    </nav>
+
+    <div class="w-full max-w-4xl bg-gray-800 bg-opacity-90 rounded-lg shadow-lg p-10 relative mt-6">
+        <h1 class="text-4xl font-bold text-center text-purple-400">Real-Time Language Translator</h1>
+        
+        <div class="mt-6">
+            <label for="text-input" class="block text-gray-300 font-semibold">Enter text to translate:</label>
+            <input type="text" id="text-input" class="w-full p-3 border rounded mt-2 text-gray-900" placeholder="Enter text">
+        </div>
+
+        <div class="flex justify-between mt-4">
+            <div>
+                <label for="source-lang" class="text-gray-300 font-semibold">Source Language:</label>
+                <select id="source-lang" class="border rounded p-2 text-gray-900">
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                    <option value="es">Spanish</option>
+                    <option value="de">German</option>
+                    <option value="hi">Hindi</option>
+                </select>
+            </div>
+            <div>
+                <label for="target-lang" class="text-gray-300 font-semibold">Target Language:</label>
+                <select id="target-lang" class="border rounded p-2 text-gray-900">
+                    <option value="fr">French</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="de">German</option>
+                    <option value="hi">Hindi</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mt-6 flex justify-center space-x-4">
+            <button onclick="translateText()" class="button btn-purple">Translate</button>
+            <button onclick="startSpeechRecognition()" class="button btn-green">Start Speaking</button>
+            <input type="file" id="audio-input" accept="audio/mp3" class="hidden">
+            <label for="audio-input" class="button btn-blue cursor-pointer" onclick="uploadAudio()">Upload Audio</label>
+            <button onclick="downloadAudio()" class="button btn-pink">Download Audio</button>
+        </div>
+        
+        <div class="flex justify-center mt-6">
+            <div class="loading-circle"></div>
+        </div>
+
+        <p id="translated-text" class="mt-4 font-semibold text-gray-300 text-center"></p>
+    </div>
+</body>
+</html>
