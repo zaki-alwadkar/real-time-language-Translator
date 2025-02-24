@@ -1,0 +1,23 @@
+requirements.txt file, including all the necessary dependencies for your Real-Time Language Translator project.
+
+txt
+Copy
+Edit
+fastapi
+uvicorn
+googletrans==4.0.0-rc1
+speechrecognition
+gtts
+pydub
+ffmpeg-python
+jinja2
+python-multipart
+deep-translator
+How to Install Dependencies
+Run the following command to install all required dependencies:
+
+bash
+Copy
+Edit
+pip install -r requirements.txt
+This will ensure that all necessary libraries are installed in your environment. 
